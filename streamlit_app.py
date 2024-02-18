@@ -104,6 +104,8 @@ with col2:
                 source_path = response_body['value'][0]['sourcePath']
                 st.session_state.target_path = target_path
                 st.session_state.source_path = source_path
+                sas_token = target_url.split('?')[1]
+                target_path = target_path + '?' + sas_token
                 st.success(target_path)
 
 col3, col4 = st.columns(2)
