@@ -1,9 +1,8 @@
-import datetime
 import json
 import time
 import streamlit as st
 import requests
-from pprint import pprint
+from streamlit_cookies_manager import CookieManager
 
 """
 # Welcome to Document Translator!
@@ -11,13 +10,36 @@ from pprint import pprint
 Ensure you have an Azure AI Translator instance and two Azure Blob containers.
 """
 
-azure_trans_endpoint = st.text_input('please input azure translation endpoint')
-azure_trans_key = st.text_input('please input key', max_chars=100, help='copy from azure portal')
-azure_trans_region = st.text_input('please input region')
-source_url = st.text_input('please input source url')
-target_url = st.text_input('please input target url')
-
 path = 'translator/text/batch/v1.1/batches'
+
+cookie_manager = CookieManager()
+if not cookie_manager.ready():
+            st.stop()
+
+item_keys = ['azure_trans_endpoint', 
+             'azure_trans_key', 
+             'azure_trans_region', 
+             'source_url', 
+             'target_url']
+
+if 'azure_trans_endpoint' in cookie_manager and 'azure_trans_key' in cookie_manager and 'azure_trans_region' in cookie_manager and 'source_url' in cookie_manager and 'target_url' in cookie_manager:
+    azure_trans_endpoint = cookie_manager.get('azure_trans_endpoint')
+    azure_trans_key = cookie_manager.get('azure_trans_key')
+    azure_trans_region = cookie_manager.get('azure_trans_region')
+    source_url = cookie_manager.get('source_url')
+    target_url = cookie_manager.get('target_url')
+    st.text('azure_trans_endpoint: ' + azure_trans_endpoint)
+    st.text('azure_trans_key: ' + azure_trans_key)
+    st.text('azure_trans_region: ' + azure_trans_region)
+    st.text('source_url: ' + source_url)
+    st.text('target_url: ' + target_url)
+else:
+    azure_trans_endpoint = st.text_input('please input azure translation endpoint', key='azure_trans_endpoint')
+    azure_trans_key = st.text_input('please input key', max_chars=100, help='copy from azure portal', key = 'azure_trans_key')
+    azure_trans_region = st.text_input('please input region', key='azure_trans_region')
+    source_url = st.text_input('please input source url', key='source_url')
+    target_url = st.text_input('please input target url', key='target_url')
+
 constructed_url = azure_trans_endpoint + path
 
 
@@ -131,3 +153,70 @@ with col4:
             st.session_state.source_path = ''
         else:
             st.info('source path is empty')
+
+col5, col6 = st.columns(2)
+
+with col5:
+    if st.button('save settings'):
+        cookie_manager['azure_trans_endpoint'] = azure_trans_endpoint
+        cookie_manager['azure_trans_key'] = azure_trans_key
+        cookie_manager['azure_trans_region'] = azure_trans_region
+        cookie_manager['source_url'] = source_url
+        cookie_manager['target_url'] = target_url
+        cookie_manager.save()
+        st.rerun()
+
+with col6:
+    if st.button('clean settings'):
+        value = None
+        if 'azure_trans_endpoint' in cookie_manager:
+            value = cookie_manager.pop('azure_trans_endpoint')
+            value = cookie_manager.pop('azure_trans_key')
+            value = cookie_manager.pop('azure_trans_region')
+            value = cookie_manager.pop('source_url')
+            value = cookie_manager.pop('target_url')
+            st.rerun()
+
+class NEW_CM:
+    def __init__(self) -> None:
+        self.cookie_manager = CookieManager()
+        #self.cookie_manager._default_expiry = datetime.now() + timedelta(minutes=1)
+
+        if not self.cookie_manager.ready():
+            st.stop()
+
+    def set_cookie(self):
+        self.cookie_manager['azure_trans_endpoint'] = azure_trans_endpoint
+        self.cookie_manager['azure_trans_key'] = azure_trans_key
+        self.cookie_manager['azure_trans_region'] = azure_trans_region
+        self.cookie_manager['source_url'] = source_url
+        self.cookie_manager['target_url'] = target_url
+        self.cookie_manager.save()
+
+    def get_cookie(self):
+        azure_trans_endpoint = self.cookie_manager.get('azure_trans_endpoint')
+        azure_trans_key = self.cookie_manager.get('azure_trans_key')
+        azure_trans_region = self.cookie_manager.get('azure_trans_region')
+        source_url = self.cookie_manager.get('source_url')
+        target_url = self.cookie_manager.get('target_url')
+        constructed_url = azure_trans_endpoint + path
+        st.session_state.azure_trans_endpoint = azure_trans_endpoint
+        st.session_state.azure_trans_key = azure_trans_key
+        st.session_state.azure_trans_region = azure_trans_region
+        st.session_state.source_url = source_url
+        st.session_state.target_url = target_url
+
+    def delete_cookie(self):
+        value = None
+        if 'azure_trans_endpoint' in self.cookie_manager:
+            value = self.cookie_manager.pop('azure_trans_endpoint')
+            value = self.cookie_manager.pop('azure_trans_key')
+            value = self.cookie_manager.pop('azure_trans_region')
+            value = self.cookie_manager.pop('source_url')
+            value = self.cookie_manager.pop('target_url')
+
+#cookie_manager = NEW_CM()
+
+#st.button("Set cookie", on_click=cookie_manager.set_cookie)
+#st.button("Get Cookie", on_click=cookie_manager.get_cookie)
+#st.button("Delete cookie", on_click=cookie_manager.delete_cookie)
